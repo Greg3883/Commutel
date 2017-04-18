@@ -24,7 +24,7 @@ public class InterfaceClient {
 		 * Open a socket on port 2222. Open the input and the output streams.
 		 */
 		try {
-			clientSocket = new Socket("localhost", 2222);
+			clientSocket = new Socket("localhost", 5000);
 			os = new PrintStream(clientSocket.getOutputStream());
 			is = new DataInputStream(clientSocket.getInputStream());
 			inputLine = new DataInputStream(new BufferedInputStream(System.in));
