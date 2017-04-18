@@ -12,66 +12,59 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
+import java.util.Vector;
 
 //Test
 public class Commutateur {
 	private int nbLignes;
-	private ArrayList<Integer> listePosteAbonne = new ArrayList<Integer>();
-
-	public Commutateur(ArrayList<Integer> listePosteAbonne) {
-		super();
-		this.nbLignes = 0;
-		this.listePosteAbonne = listePosteAbonne;
-	}
+	private Vector listePosteAbonne = new Vector();
 
 	public static void main(String args[]) {
-
-		ServerSocket echoServer = null;
-		String line;
-		DataInputStream is;
-		PrintStream os;
-		Socket clientSocket = null;
+		Commutateur commutateur = new Commutateur();
+		Integer port = 5000;
 
 		try {
-			echoServer = new ServerSocket(5000);
-		} catch (IOException e) {
-			System.out.println(e);
-		}
-
-		System.out.println("The server started. To stop it press <CTRL><C>.");
-		try {
-			clientSocket = echoServer.accept();
-			is = new DataInputStream(clientSocket.getInputStream());
-			os = new PrintStream(clientSocket.getOutputStream());
-
+			ServerSocket ServCommutateur = new ServerSocket(port);
+			affichageMenu();
 			while (true) {
-				line = is.readLine();
-				os.println("From server: " + line);
+				new InterfaceClient(ServCommutateur.accept(), commutateur);
 			}
 		} catch (IOException e) {
-			System.out.println(e);
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
-	public int getNbLignes() {
+	synchronized public void sendAll(String message, String sLast) {
+		PrintWriter out;
+		for (int i = 0; i < listePosteAbonne.size(); i++){
+			out = (PrintWriter) listePosteAbonne.elementAt(i);
+			if (out != null) {
+				out.print(message + sLast);
+				out.flush();
+			}
+		}
+	}
+
+	static private void affichageMenu() {
+		System.out.println("Bienvenu sur Commutel");
+	}
+
+	synchronized public void delClient(int i) {
+		nbLignes--;
+		if (listePosteAbonne.get(i) != null) {
+			listePosteAbonne.remove(i);
+		}
+	}
+
+	synchronized public int addPosteAbonne(PrintWriter out) {
+		nbLignes++;
+		listePosteAbonne.add(out);
+		return listePosteAbonne.size() - 1;
+	}
+
+	synchronized public int getNbLignes() {
 		return nbLignes;
-	}
-
-	public void setNbLignes(int nbLignes) {
-		this.nbLignes = nbLignes;
-	}
-
-	public ArrayList<Integer> getListePosteAbonne() {
-		return listePosteAbonne;
-	}
-
-	public void setListePosteAbonne(ArrayList<Integer> listePosteAbonne) {
-		this.listePosteAbonne = listePosteAbonne;
-	}
-
-	public void addPosteAbonne(posteAbonne posteAbonne) {
-		int idToAdd = posteAbonne.getId();
-		this.listePosteAbonne.add(idToAdd);
 	}
 
 }

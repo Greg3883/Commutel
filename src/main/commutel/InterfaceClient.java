@@ -11,52 +11,64 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-public class InterfaceClient {
+public class InterfaceClient implements Runnable {
 
-	public static void main(String[] args) {
-
-		Socket clientSocket = null;
-		DataInputStream is = null;
-		PrintStream os = null;
-		DataInputStream inputLine = null;
-
-		try {
-			clientSocket = new Socket("localhost", 5000);
-			os = new PrintStream(clientSocket.getOutputStream());
-			is = new DataInputStream(clientSocket.getInputStream());
-			inputLine = new DataInputStream(new BufferedInputStream(System.in));
-		} catch (UnknownHostException e) {
-			System.err.println("Don't know about host");
-		} catch (IOException e) {
-			System.err.println("Couldn't get I/O for the connection to host");
+	private Thread t;
+	private Socket s;
+	private PrintWriter out;
+	private BufferedReader in; 
+	private Commutateur commutateur;
+	private int numClient = 0;
+	
+	InterfaceClient(Socket s, Commutateur commutateur){
+		this.commutateur = commutateur;
+		this.s = s;
+		try{
+			this.out = new PrintWriter(this.s.getOutputStream());
+			this.in = new BufferedReader(new InputStreamReader(this.s.getInputStream()));
+			this.numClient = commutateur.addPosteAbonne(this.out);
+		} catch(IOException e){ 
+			
 		}
-
-		if (clientSocket != null && os != null && is != null) {
-			try {
-
-				System.out.println("The client started. Type any text. To quit it type 'Ok'.");
-				String responseLine;
-				os.println(inputLine.readLine());
-				while ((responseLine = is.readLine()) != null) {
-					System.out.println(responseLine);
-					if (responseLine.indexOf("Ok") != -1) {
-						break;
-					}
-					os.println(inputLine.readLine());
-				}
-
-				os.close();
-				is.close();
-				clientSocket.close();
-			} catch (UnknownHostException e) {
-				System.err.println("Trying to connect to unknown host: " + e);
-			} catch (IOException e) {
-				System.err.println("IOException:  " + e);
-			}
-		}
+		
+		this.t = new Thread(this);
+		t.start();
 	}
 
-	public void decrocher() {
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
+		String message = "";
+		System.out.println("Un nouveau client s'est connecte, no " + numClient);
+		
+		try{
+			 char charCur[] = new char[1];
+			 while(this.in.read(charCur, 0, 1)!=-1){
+				 if (charCur[0] != '\u0000' && charCur[0] != '\n' && charCur[0] != '\r'){
+					 message += charCur[0];
+				 } else if(!message.equalsIgnoreCase("")) {
+					 if(charCur[0]=='\u0000'){
+						 this.commutateur.sendAll(message,""+charCur[0]);
+					 } else {
+						 this.commutateur.sendAll(message,"");
+					 }
+					 message = "";
+				 }
+			 }
+		}  catch (Exception e){
+			
+		}
+		
+		finally {
+			try{
+				System.out.println("Le client no "+numClient+" s'est deconnecte");
+				this.commutateur.delClient(numClient);
+				this.s.close();
+			}  catch (IOException e){ 
+				
+			}
+		}
 
 	}
 
